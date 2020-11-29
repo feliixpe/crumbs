@@ -5,7 +5,7 @@
     "version": "${version}",
 
     "name": "Crumbs",
-    "description": "Description",
+    "description": "A building mod which adds various blocks tuned to fit with vanilla minecraft!",
     "icon": "pack.png",
 
     "authors": [
