@@ -3,9 +3,9 @@ package net.dodogang.crumbs.event;
 import com.google.common.collect.ImmutableMap;
 import net.dodogang.crumbs.CrumbsCore;
 import net.dodogang.crumbs.block.CrumbsBlocks;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.PillarBlock;
+import net.minecraft.block.*;
+import net.minecraft.block.enums.DoorHinge;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.sound.SoundCategory;
@@ -32,6 +32,7 @@ public class RightClickBlockHandlers {
                 .build();
 
         CrumbsCore.platform.registerOnRightClickBlockHandler(this::stripLog);
+        CrumbsCore.platform.registerOnRightClickBlockHandler(this::openDoubleDoor);
     }
 
     public ActionResult stripLog(PlayerEntity player, World world, Hand hand, BlockPos pos, Direction dir) {
@@ -52,6 +53,24 @@ public class RightClickBlockHandlers {
             }
             return ActionResult.SUCCESS;
         }
+        return ActionResult.PASS;
+    }
+
+    public ActionResult openDoubleDoor(PlayerEntity player, World world, Hand hand, BlockPos pos, Direction dir) {
+        if (!player.isSneaky() && world.getBlockState(pos).getBlock() instanceof DoorBlock) {
+            BlockState state = world.getBlockState(pos);
+            Direction facing = state.get(DoorBlock.FACING);
+            DoorHinge isMirrored = state.get(DoorBlock.HINGE);
+
+            BlockPos mirrorPos = pos.offset(isMirrored == DoorHinge.RIGHT ? facing.rotateYCounterclockwise() : facing.rotateYClockwise());
+            BlockPos otherPos = state.get(DoorBlock.HALF) == DoubleBlockHalf.LOWER ? mirrorPos : mirrorPos.down();
+            BlockState otherState = world.getBlockState(otherPos);
+
+            if (state.getMaterial() != Material.METAL && otherState.isOf(state.getBlock()) && otherState.get(DoorBlock.FACING) == facing && otherState.get(DoorBlock.OPEN) == state.get(DoorBlock.OPEN) && otherState.get(DoorBlock.HINGE) != isMirrored) {
+                world.setBlockState(otherPos, otherState.cycle(DoorBlock.OPEN));
+            }
+        }
+
         return ActionResult.PASS;
     }
 }
